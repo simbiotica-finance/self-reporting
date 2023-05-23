@@ -1,5 +1,7 @@
 require('dotenv').config();
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-web3");
+require("./tasks")
 
 import { HardhatUserConfig } from "hardhat/config";
 import '@nomiclabs/hardhat-ethers'
