@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: private
+// This contract is privately owned by [Your Company Name].
+// All rights reserved.
+// You can specify additional details about ownership or licensing here.
+
 pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -20,6 +25,7 @@ contract OnChainForms is Ownable {
     struct Question {
         string title;
         string description;
+        bool isRequired;
         Counters.Counter responsesCount;
         mapping(uint => Response) responses;
     }
@@ -61,6 +67,7 @@ contract OnChainForms is Ownable {
         uint questionIndex = form.questionsCount.current();
         form.questions[questionIndex].title = _questionTitle;
         form.questions[questionIndex].description = _questionDescription;
+        form.questions[questionIndex].isRequired = false;
         emit QuestionCreated(questionIndex, _questionTitle);
         form.questionsCount.increment();
     }
