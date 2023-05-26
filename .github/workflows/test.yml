@@ -19,4 +19,6 @@ jobs:
         run: npm ci
 
       - name: Run tests
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: npm test
