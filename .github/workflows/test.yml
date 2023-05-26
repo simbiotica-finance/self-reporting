@@ -19,6 +19,8 @@ jobs:
         run: npm ci
         
       - name: Compile contract
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: npm run compile
 
       - name: Run tests
