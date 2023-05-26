@@ -18,20 +18,36 @@ contract OnChainForms is Ownable {
     mapping(uint => Form) public forms;
 
     struct Response {
-        string response;
+        uint response;
         uint timestamp;
     }
+
+    enum ResponseType { Number }
 
     struct Question {
         string title;
         string description;
         bool isRequired;
+        ResponseType responseType;
         Counters.Counter responsesCount;
         mapping(uint => Response) responses;
     }
 
+    struct DisplayForm {
+        uint id;
+        string title;
+    }
+
+    struct DisplayQuestion {
+        uint id;
+        string title;
+        string description;
+    }
+
+
     struct Form {
         string title;
+        string description;
         Counters.Counter questionsCount;
         mapping(uint => Question) questions;
         Counters.Counter responsesCount;
@@ -55,39 +71,46 @@ contract OnChainForms is Ownable {
         return form.allowedResponders[_responder];
     }
 
-    function createForm(string memory _title) public onlyOwner returns (uint formId) {
-        _formIds.increment();
+    function createForm(string memory _title, string memory _description) public onlyOwner returns (uint formId) {
         formId = _formIds.current();
         forms[formId].title = _title;
+        forms[formId].description = _description;
         emit FormCreated(formId, _title);
+        _formIds.increment();
+
     }
 
-    function addQuestionToForm(uint _formId, string memory _questionTitle, string memory _questionDescription) public onlyOwner {
+    function addQuestionToForm(
+        uint _formId, 
+        string calldata _questionTitle, 
+        string calldata _questionDescription,
+        bool _isRequired,
+        ResponseType _responseType
+    ) public onlyOwner {    
         Form storage form = forms[_formId];
         uint questionIndex = form.questionsCount.current();
         form.questions[questionIndex].title = _questionTitle;
         form.questions[questionIndex].description = _questionDescription;
-        form.questions[questionIndex].isRequired = false;
+        form.questions[questionIndex].isRequired = _isRequired;
+        form.questions[questionIndex].responseType = _responseType;
         emit QuestionCreated(questionIndex, _questionTitle);
         form.questionsCount.increment();
+
     }
 
-    function submitResponse(uint _formId, uint _questionIndex, string memory _response) public {
+    function submitResponse(uint _formId, uint _questionIndex, uint _response) public {
         Form storage form = forms[_formId];
         require(form.allowedResponders[msg.sender], "Not an allowed responder");
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
 
         Question storage question = form.questions[_questionIndex];
+        require(question.responseType == ResponseType.Number, "Invalid response type");
 
         uint timestamp = block.timestamp;
-        Response memory newResponse = Response(_response, timestamp);
         uint responseIndex = question.responsesCount.current();
-        question.responses[responseIndex] = newResponse;
+        question.responses[responseIndex] = Response(_response,timestamp);
         question.responsesCount.increment();
-
-        if (question.responsesCount.current() == 1) {
-            form.responsesCount.increment();
-        }
+        form.responsesCount.increment();
     }
 
     function getForm(uint _formId) public view returns (
@@ -115,16 +138,39 @@ contract OnChainForms is Ownable {
         );
     }
 
+    function getAllForms() public view returns (DisplayForm[] memory formsResponse) {
+        uint formsCount = _formIds.current();
+        formsResponse = new DisplayForm[](formsCount);
+        for (uint i = 0; i < formsCount; i++) {
+            formsResponse[i].id = i ;
+            formsResponse[i].title = forms[i].title;
+        }
+        return formsResponse;
+    }
+
     function getFormDetails(uint _formId) public view returns (
+        uint id,
         string memory title, 
+        string memory description,
         uint questionsCount, 
-        uint responsesCount
+        DisplayQuestion[] memory questions
     ) {
         Form storage form = forms[_formId];
+        uint totalQuestions = form.questionsCount.current();
+
+        questions = new DisplayQuestion[](totalQuestions);
+
+        for (uint i = 0; i < totalQuestions; i++) {
+            Question storage question = form.questions[i];
+            questions[i] = DisplayQuestion(i,question.title, question.description);
+        }
+
         return (
+            _formId,
             form.title, 
-            form.questionsCount.current(), 
-            form.responsesCount.current()
+            form.description,
+            totalQuestions, 
+            questions
         );
     }
 
@@ -144,13 +190,13 @@ contract OnChainForms is Ownable {
     }
 
     function getResponseHistory(uint _formId, uint _questionIndex) public view
-        returns (string[] memory responses, uint[] memory timestamps)
+        returns (uint[] memory responses, uint[] memory timestamps)
     {
         Form storage form = forms[_formId];
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
 
         Question storage question = form.questions[_questionIndex];
-        responses = new string[](question.responsesCount.current());
+        responses = new uint[](question.responsesCount.current());
         timestamps = new uint[](question.responsesCount.current());
 
         for (uint i = 0; i < question.responsesCount.current(); i++) {

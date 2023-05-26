@@ -6,6 +6,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "deploy-testnet": "hardhat --network alfajores deploy",
+    "add-form": "hardhat --network alfajores add-form",
+    "add-question": "hardhat --network alfajores add-question",
     "test": "jest --config ./jest.config.js"
   },
   "author": "",
