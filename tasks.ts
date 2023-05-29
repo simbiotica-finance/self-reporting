@@ -28,7 +28,7 @@ interface TaskConfig {
 
 task("deploy", "Deploy the contract")
   .addFlag("skipDependencyCheck", "Skip dependency check")
-  .setAction(async ({ skipDependencyCheck }, hre: any): Promise<ActionReturn> => {
+  .setAction(async ({ skipDependencyCheck }: any, hre: any): Promise<ActionReturn> => {
     if (!skipDependencyCheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
@@ -105,7 +105,7 @@ task("add-question", "Create a question on a form")
 
 task("process-json", "Process tasks from JSON file")
   .addParam("json", "Path to the JSON file")
-  .setAction(async ({ json }, hre) => {
+  .setAction(async ({ json } : any, hre: any) => {
     const jsonContent = fs.readFileSync(json, "utf8");
     const tasks: TaskConfig[] = JSON.parse(jsonContent);
 
@@ -118,7 +118,8 @@ task("process-json", "Process tasks from JSON file")
         const result = await hre.run(name, { ...params, skipDependencyCheck: true, ...results });
         Object.assign(results, result);
       } catch (error) {
-        console.error(`Error executing task '${name}': ${error.message}`);
+        const { message } = error as Error;
+        console.error(`Error executing task '${name}': ${message}`);
       }
     }
 
