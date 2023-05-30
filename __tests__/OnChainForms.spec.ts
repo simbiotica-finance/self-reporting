@@ -436,5 +436,44 @@ describe('OnChainForms', () => {
 
   })
 
+  it('Should retrieve responses from a particular responder', async () => {
+    const title = 'Test Form'
+    const description = 'Describe test form'
+    const questions = [
+      { title: 'Question 1', description: 'Describe question 1', isRequired: true, responseType: 0},
+      { title: 'Question 2', description: 'Describe question 2', isRequired: true, responseType: 0}
+    ]
+
+    const { formId } = await getFromEvents(
+      await onChainForms.createForm(title, description),
+      'FormCreated'
+    )
+
+    for (let question of questions) {
+      await onChainForms.addQuestionToForm(
+        formId,
+        question.title,
+        question.description,
+        question.isRequired,
+        question.responseType
+      )
+    }
+
+    const responder = others[0].address
+    await onChainForms.addResponder(formId, responder)
+
+    const responses = [45, 22]
+
+    for (let i = 0; i < responses.length; i++) {
+      await onChainForms
+        .connect(others[0])
+        .submitResponse(formId, i, responses[i])
+    }
+
+    const retrievedResponses = await onChainForms.getResponsesByResponder(responder)
+
+    expect(retrievedResponses.map((i: any) => i.response)).to.deep.equal(responses)
+  })
+
 })
 

@@ -16,6 +16,8 @@ contract OnChainForms is Ownable {
 
     Counters.Counter private _formIds;
     mapping(uint => Form) public forms;
+    mapping(address => Response[]) public responderResponses;
+
 
     struct Response {
         uint response;
@@ -108,9 +110,12 @@ contract OnChainForms is Ownable {
 
         uint timestamp = block.timestamp;
         uint responseIndex = question.responsesCount.current();
-        question.responses[responseIndex] = Response(_response,timestamp);
+        Response memory newResponse = Response(_response, timestamp);
+        question.responses[responseIndex] = newResponse;
         question.responsesCount.increment();
         form.responsesCount.increment();
+
+        responderResponses[msg.sender].push(newResponse);
     }
 
     function getForm(uint _formId) public view returns (
@@ -206,4 +211,9 @@ contract OnChainForms is Ownable {
 
         return (responses, timestamps);
     }
+    function getResponsesByResponder(address _responder) public view returns (Response[] memory) {
+        return responderResponses[_responder];
+    }
+
+
 }
