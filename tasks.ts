@@ -9,7 +9,7 @@ interface ActionParams {
   responseType?: number;
   contract: string;
   description: string;
-  skipDependencyCheck?: boolean;
+  skipdependencycheck?: boolean;
 }
 
 interface ActionReturn {
@@ -27,9 +27,9 @@ interface TaskConfig {
 }
 
 task("deploy", "Deploy the contract")
-  .addFlag("skipDependencyCheck", "Skip dependency check")
-  .setAction(async ({ skipDependencyCheck }: any, hre: any): Promise<ActionReturn> => {
-    if (!skipDependencyCheck && !hre.dependencies.hasOwnProperty("contract")) {
+  .addFlag("skipdependencycheck", "Skip dependency check")
+  .setAction(async ({ skipdependencycheck }: any, hre: any): Promise<ActionReturn> => {
+    if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
 
@@ -49,12 +49,12 @@ task("deploy", "Deploy the contract")
   });
 
 task("add-form", "Create a form")
-  .addFlag("skipDependencyCheck", "Skip dependency check")
+  .addFlag("skipdependencycheck", "Skip dependency check")
   .addParam("contract", "The form address.")
   .addParam("title", "Create a title for the form", "Default Title")
   .addParam("description", "Create a description for the form", "Default Description")
-  .setAction(async ({ contract, title, description, skipDependencyCheck }: ActionParams, hre: any): Promise<ActionReturn> => {
-    if (!skipDependencyCheck && !hre.dependencies.hasOwnProperty("contract")) {
+  .setAction(async ({ contract, title, description, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
+    if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
 
@@ -75,15 +75,15 @@ task("add-form", "Create a form")
   });
 
 task("add-question", "Create a question on a form")
-  .addFlag("skipDependencyCheck", "Skip dependency check")
+  .addFlag("skipdependencycheck", "Skip dependency check")
   .addParam("contract", "The form address.", undefined, types.string)
   .addParam("formId", "The form id.", undefined, types.int)
   .addParam("title", "Create a title for the form", "Default Question Title")
   .addParam("responseType", "What type of response is required?", undefined, types.int)
   .addParam("required", "Is the question required?", false, types.boolean)
   .addParam("description", "Create a description for the form", "Default Question Description", types.string)
-  .setAction(async ({ formId, title, contract, description, required, responseType, skipDependencyCheck }: ActionParams, hre: any): Promise<ActionReturn> => {
-    if (!skipDependencyCheck && !hre.dependencies.hasOwnProperty("contract")) {
+  .setAction(async ({ formId, title, contract, description, required, responseType, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
+    if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
 
@@ -105,7 +105,7 @@ task("add-question", "Create a question on a form")
 
 task("process-json", "Process tasks from JSON file")
   .addParam("json", "Path to the JSON file")
-  .setAction(async ({ json } : any, hre: any) => {
+  .setAction(async ({ json }: any, hre: any) => {
     const jsonContent = fs.readFileSync(json, "utf8");
     const tasks: TaskConfig[] = JSON.parse(jsonContent);
 
@@ -115,7 +115,7 @@ task("process-json", "Process tasks from JSON file")
       const { name, ...params } = taskConfig;
 
       try {
-        const result = await hre.run(name, { ...params, skipDependencyCheck: true, ...results });
+        const result = await hre.run(name, { ...params, skipdependencycheck: true, ...results });
         Object.assign(results, result);
       } catch (error) {
         const { message } = error as Error;
