@@ -1,4 +1,4 @@
-import { Contract, Transaction, Wallet } from 'ethers'
+import { Contract } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { deployContract } from 'ethereum-waffle' // this adds expect(onChainForms.address).to.be.properAddress (???)
 import { expect } from 'chai'
@@ -474,6 +474,48 @@ describe('OnChainForms', () => {
 
     expect(retrievedResponses.map((i: any) => i.response)).to.deep.equal(responses)
   })
+
+  it('Should submit multiple responses successfully', async () => {
+  const title = 'Test Form'
+  const description = 'Describe test form'
+  const questions = [
+    { title: 'Question 1', description: 'Describe question 1', isRequired: true, responseType: 0},
+    { title: 'Question 2', description: 'Describe question 2', isRequired: true, responseType: 0}
+  ]
+
+  const { formId } = await getFromEvents(
+    await onChainForms.createForm(title, description),
+    'FormCreated'
+  )
+
+  for (let question of questions) {
+    await onChainForms.addQuestionToForm(
+      formId,
+      question.title,
+      question.description,
+      question.isRequired,
+      question.responseType
+    )
+  }
+
+  await onChainForms.addResponder(formId, others[0].address)
+
+  const questionIndices = [0, 1]
+  const responses = [42, 43]
+
+  await onChainForms
+    .connect(others[0])
+    .submitMultipleResponses(formId, questionIndices, responses)
+
+  for (let i = 0; i < questionIndices.length; i++) {
+    const responseHistory = await onChainForms.getResponseHistory(
+      formId,
+      questionIndices[i]
+    )
+    expect(responseHistory.responses[0]).to.equal(responses[i])
+  }
+})
+
 
 })
 

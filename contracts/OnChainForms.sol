@@ -13,6 +13,7 @@ contract OnChainForms is Ownable {
     
     event FormCreated(uint formId, string title);
     event QuestionCreated(uint questionIndex, string title);
+    event ResponseSubmitted(uint formId, uint questionIndex, uint response, address responder);
 
     Counters.Counter private _formIds;
     mapping(uint => Form) public forms;
@@ -116,6 +117,36 @@ contract OnChainForms is Ownable {
         form.responsesCount.increment();
 
         responderResponses[msg.sender].push(newResponse);
+        emit ResponseSubmitted(_formId, _questionIndex, _response, msg.sender);
+    }
+
+    function submitMultipleResponses(
+        uint _formId, 
+        uint[] calldata _questionIndices, 
+        uint[] calldata _responses
+    ) public {
+        require(_questionIndices.length == _responses.length, "Mismatched question indices and responses");
+
+        // Instead of a mapping, we create an array with a size equal to the total number of questions
+        bool[] memory answeredQuestions = new bool[](forms[_formId].questionsCount.current());
+
+        for (uint i = 0; i < _questionIndices.length; i++) {
+            uint questionIndex = _questionIndices[i];
+            submitResponse(_formId, questionIndex, _responses[i]);
+
+            // Here we set the corresponding index in the array to true
+            answeredQuestions[questionIndex] = true;
+        }
+
+        // Check if all required questions have been answered
+        Form storage form = forms[_formId];
+        for (uint i = 0; i < form.questionsCount.current(); i++) {
+            Question storage question = form.questions[i];
+
+            if (question.isRequired && !answeredQuestions[i]) {
+                revert("A required question has not been answered");
+            }
+        }
     }
 
     function getForm(uint _formId) public view returns (
@@ -212,7 +243,11 @@ contract OnChainForms is Ownable {
         return (responses, timestamps);
     }
     function getResponsesByResponder(address _responder) public view returns (Response[] memory) {
-        return responderResponses[_responder];
+        if (responderResponses[_responder].length > 0) {
+            return responderResponses[_responder];
+        } else {
+            return new Response[](0);
+        }
     }
 
 
