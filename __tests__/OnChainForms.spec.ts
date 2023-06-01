@@ -472,7 +472,7 @@ describe('OnChainForms', () => {
 
     const retrievedResponses = await onChainForms.getResponsesByResponder(responder)
 
-    expect(retrievedResponses.map((i: any) => i.response)).to.deep.equal(responses)
+    expect(retrievedResponses.map((i: any) => i.responses.response)).to.deep.equal(responses)
   })
 
   it('Should submit multiple responses successfully', async () => {

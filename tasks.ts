@@ -8,6 +8,7 @@ interface ActionParams {
   required?: boolean;
   responseType?: number;
   contract: string;
+  address?: string;
   description: string;
   skipdependencycheck?: boolean;
 }
@@ -100,6 +101,33 @@ task("add-question", "Create a question on a form")
 
     return {
       questionIndex: questionIndex.toNumber(),
+    };
+  });
+
+task("add-responder", "Add a responder to a form")
+  .addFlag("skipdependencycheck", "Skip dependency check")
+  .addParam("contract", "The form address.", undefined, types.string)
+  .addParam("formId", "The form id.", undefined, types.int)
+  .addParam("address", "The address of the responder.", undefined, types.string)
+  .setAction(async ({ formId, address, contract, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
+    if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
+      throw new Error("Missing dependency: contract");
+    }
+
+    const OnChainForms = await hre.ethers.getContractAt("OnChainForms", contract);
+
+    const tx = await OnChainForms.addResponder(formId, address, {
+      gasLimit: 1000000,
+      gasPrice: 100000000000,
+    })
+
+    const { responder } = await getFromEvents(tx, "ResponderAdded");
+
+    console.log("New responder added:", formId, responder);
+
+    return {
+      formId: formId,
+      responder: responder,
     };
   });
 

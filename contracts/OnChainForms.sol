@@ -13,16 +13,24 @@ contract OnChainForms is Ownable {
     
     event FormCreated(uint formId, string title);
     event QuestionCreated(uint questionIndex, string title);
+    event ResponderAdded(uint formId, address responder);
     event ResponseSubmitted(uint formId, uint questionIndex, uint response, address responder);
 
     Counters.Counter private _formIds;
     mapping(uint => Form) public forms;
-    mapping(address => Response[]) public responderResponses;
-
+    mapping(address => FormResponse[]) public formResponsesByResponder;
+    mapping(uint => FormResponse[]) public formResponsesByTimestamp;
 
     struct Response {
+        uint questionIndex;
         uint response;
         uint timestamp;
+    }
+
+    struct FormResponse {
+        uint formId;
+        uint timestamp;
+        Response responses;
     }
 
     enum ResponseType { Number }
@@ -47,7 +55,6 @@ contract OnChainForms is Ownable {
         string description;
     }
 
-
     struct Form {
         string title;
         string description;
@@ -57,16 +64,16 @@ contract OnChainForms is Ownable {
         mapping(address => bool) allowedResponders;
     }
 
-    function addResponders(uint _formId, address[] memory _responders) public onlyOwner {
-        Form storage form = forms[_formId];
-        for (uint i = 0; i < _responders.length; i++) {
-            form.allowedResponders[_responders[i]] = true;
-        }
-    }
-
     function addResponder(uint _formId, address _responder) public onlyOwner {
         Form storage form = forms[_formId];
         form.allowedResponders[_responder] = true;
+        emit ResponderAdded(_formId, _responder);
+    }
+
+    function addResponders(uint _formId, address[] memory _responders) public onlyOwner {
+        for (uint i = 0; i < _responders.length; i++) {
+            addResponder(_formId, _responders[i]);
+        }
     }
 
     function isAllowedResponder(uint _formId, address _responder) public view returns (bool) {
@@ -80,7 +87,6 @@ contract OnChainForms is Ownable {
         forms[formId].description = _description;
         emit FormCreated(formId, _title);
         _formIds.increment();
-
     }
 
     function addQuestionToForm(
@@ -98,54 +104,56 @@ contract OnChainForms is Ownable {
         form.questions[questionIndex].responseType = _responseType;
         emit QuestionCreated(questionIndex, _questionTitle);
         form.questionsCount.increment();
-
     }
 
     function submitResponse(uint _formId, uint _questionIndex, uint _response) public {
         Form storage form = forms[_formId];
+        Question storage question = form.questions[_questionIndex];
+
+        uint _timestamp = block.timestamp;
+
         require(form.allowedResponders[msg.sender], "Not an allowed responder");
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
-
-        Question storage question = form.questions[_questionIndex];
         require(question.responseType == ResponseType.Number, "Invalid response type");
 
-        uint timestamp = block.timestamp;
-        uint responseIndex = question.responsesCount.current();
-        Response memory newResponse = Response(_response, timestamp);
-        question.responses[responseIndex] = newResponse;
-        question.responsesCount.increment();
-        form.responsesCount.increment();
+        Response memory newResponse = Response(_questionIndex, _response, _timestamp);
 
-        responderResponses[msg.sender].push(newResponse);
+        question.responses[question.responsesCount.current()] = newResponse;
+        question.responsesCount.increment();
+
+        formResponsesByResponder[msg.sender].push(FormResponse(_formId, _timestamp, newResponse));
+
         emit ResponseSubmitted(_formId, _questionIndex, _response, msg.sender);
+    }
+
+    function checkAllRequiredQuestionsAnswered(uint _formId, uint[] memory _questionIndexes) private view {
+        bool[] memory answeredQuestions = new bool[](forms[_formId].questionsCount.current());
+
+        for (uint i = 0; i < _questionIndexes.length; i++) {
+            answeredQuestions[_questionIndexes[i]] = true;
+        }
+
+        Form storage form = forms[_formId];
+        for (uint i = 0; i < form.questionsCount.current(); i++) {
+            Question storage question = form.questions[i];
+            if (question.isRequired && !answeredQuestions[i]) {
+                revert("A required question has not been answered");
+            }
+        }
     }
 
     function submitMultipleResponses(
         uint _formId, 
-        uint[] calldata _questionIndices, 
+        uint[] calldata _questionIndexes, 
         uint[] calldata _responses
     ) public {
-        require(_questionIndices.length == _responses.length, "Mismatched question indices and responses");
+        require(_questionIndexes.length == _responses.length, "Mismatched question indices and responses");
+        require(_formId < _formIds.current(), "Invalid form id");
 
-        // Instead of a mapping, we create an array with a size equal to the total number of questions
-        bool[] memory answeredQuestions = new bool[](forms[_formId].questionsCount.current());
+        checkAllRequiredQuestionsAnswered(_formId, _questionIndexes);
 
-        for (uint i = 0; i < _questionIndices.length; i++) {
-            uint questionIndex = _questionIndices[i];
-            submitResponse(_formId, questionIndex, _responses[i]);
-
-            // Here we set the corresponding index in the array to true
-            answeredQuestions[questionIndex] = true;
-        }
-
-        // Check if all required questions have been answered
-        Form storage form = forms[_formId];
-        for (uint i = 0; i < form.questionsCount.current(); i++) {
-            Question storage question = form.questions[i];
-
-            if (question.isRequired && !answeredQuestions[i]) {
-                revert("A required question has not been answered");
-            }
+        for (uint i = 0; i < _questionIndexes.length; i++) {
+            submitResponse(_formId, _questionIndexes[i], _responses[i]);
         }
     }
 
@@ -242,13 +250,9 @@ contract OnChainForms is Ownable {
 
         return (responses, timestamps);
     }
-    function getResponsesByResponder(address _responder) public view returns (Response[] memory) {
-        if (responderResponses[_responder].length > 0) {
-            return responderResponses[_responder];
-        } else {
-            return new Response[](0);
-        }
-    }
 
+    function getResponsesByResponder(address _responder) public view returns (FormResponse[] memory) {
+        return formResponsesByResponder[_responder];
+    }
 
 }

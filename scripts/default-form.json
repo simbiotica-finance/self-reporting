@@ -41,5 +41,9 @@
     "description": "If the Institution has identified all the parties interested in the Institutions' actions and has publicly made available a document that details the distribution of benefits, answer ''Yes''. If the interested parties and their benefits have not been identified and structured in public documentation, answer No.",
     "responseType": 0,
     "required": true
+  },
+  {
+    "name": "add-responder",
+    "address": "0xe52025ECFe3E724203f755118e20C73500A6Ac6A"
   }
 ]
