@@ -4,7 +4,7 @@ const getFromEvents = require("./utils/getFromEvents");
 
 interface ActionParams {
   title: string;
-  formId?: number;
+  formid?: number;
   required?: boolean;
   responseType?: number;
   contract: string;
@@ -20,7 +20,7 @@ interface ActionReturn {
 interface TaskConfig {
   name: string;
   contract?: string;
-  formId?: number;
+  formid?: number;
   title?: string;
   description?: string;
   responseType?: number;
@@ -66,31 +66,31 @@ task("add-form", "Create a form")
       gasPrice: 100000000000,
     });
 
-    const { formId } = await getFromEvents(tx, "FormCreated");
+    const { formid } = await getFromEvents(tx, "FormCreated");
 
-    console.log("New form:", formId);
+    console.log("New form:", formid);
 
     return {
-      formId: formId.toNumber(),
+      formid: formid.toNumber(),
     };
   });
 
 task("add-question", "Create a question on a form")
   .addFlag("skipdependencycheck", "Skip dependency check")
   .addParam("contract", "The form address.", undefined, types.string)
-  .addParam("formId", "The form id.", undefined, types.int)
+  .addParam("formid", "The form id.", undefined, types.int)
   .addParam("title", "Create a title for the form", "Default Question Title")
   .addParam("responseType", "What type of response is required?", undefined, types.int)
   .addParam("required", "Is the question required?", false, types.boolean)
   .addParam("description", "Create a description for the form", "Default Question Description", types.string)
-  .setAction(async ({ formId, title, contract, description, required, responseType, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
+  .setAction(async ({ formid, title, contract, description, required, responseType, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
     if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
 
     const OnChainForms = await hre.ethers.getContractAt("OnChainForms", contract);
 
-    const tx = await OnChainForms.addQuestionToForm(formId, title, description, required, responseType, {
+    const tx = await OnChainForms.addQuestionToForm(formid, title, description, required, responseType, {
       gasLimit: 1000000,
       gasPrice: 100000000000,
     });
@@ -107,26 +107,26 @@ task("add-question", "Create a question on a form")
 task("add-responder", "Add a responder to a form")
   .addFlag("skipdependencycheck", "Skip dependency check")
   .addParam("contract", "The form address.", undefined, types.string)
-  .addParam("formId", "The form id.", undefined, types.int)
+  .addParam("formid", "The form id.", undefined, types.int)
   .addParam("address", "The address of the responder.", undefined, types.string)
-  .setAction(async ({ formId, address, contract, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
+  .setAction(async ({ formid, address, contract, skipdependencycheck }: ActionParams, hre: any): Promise<ActionReturn> => {
     if (!skipdependencycheck && !hre.dependencies.hasOwnProperty("contract")) {
       throw new Error("Missing dependency: contract");
     }
 
     const OnChainForms = await hre.ethers.getContractAt("OnChainForms", contract);
 
-    const tx = await OnChainForms.addResponder(formId, address, {
+    const tx = await OnChainForms.addResponder(formid, address, {
       gasLimit: 1000000,
       gasPrice: 100000000000,
     })
 
     const { responder } = await getFromEvents(tx, "ResponderAdded");
 
-    console.log("New responder added:", formId, responder);
+    console.log("New responder added:", formid, responder);
 
     return {
-      formId: formId,
+      formid: formid,
       responder: responder,
     };
   });
