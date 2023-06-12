@@ -49,6 +49,17 @@ task("deploy", "Deploy the contract")
     };
   });
 
+task("add-variables", "Add variables to the environment")
+  .addParam("variables", "Variables to add to the environment")
+  .setAction(async ({ variables }, hre) => {
+    const parsedVariables = JSON.parse(variables);
+    console.log(parsedVariables)
+    const results = {};
+    Object.assign(results, parsedVariables);
+    return results;
+  });
+
+
 task("add-form", "Create a form")
   .addFlag("skipdependencycheck", "Skip dependency check")
   .addParam("contract", "The form address.")
@@ -66,12 +77,14 @@ task("add-form", "Create a form")
       gasPrice: 100000000000,
     });
 
-    const { formid } = await getFromEvents(tx, "FormCreated");
+    console.log(tx)
 
-    console.log("New form:", formid);
+    const { formId } = await getFromEvents(tx, "FormCreated");
+
+    console.log("New form:", formId);
 
     return {
-      formid: formid.toNumber(),
+      formid: formId.toNumber(),
     };
   });
 
