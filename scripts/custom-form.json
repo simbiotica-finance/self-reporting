@@ -1,7 +1,6 @@
 [
   {
-    "name": "add-variables",
-    "variables": "{\"contract\":\"0x8AFC8E408d7075612C6968E7003ba28eC3DBAf10\"}"
+    "name": "deploy"
   },
   {
     "name": "add-form",
