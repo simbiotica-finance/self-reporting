@@ -51,7 +51,7 @@ task("deploy", "Deploy the contract")
 
 task("add-variables", "Add variables to the environment")
   .addParam("variables", "Variables to add to the environment")
-  .setAction(async ({ variables }, hre) => {
+  .setAction(async ({ variables } : { variables: any }, hre: any) => {
     const parsedVariables = JSON.parse(variables);
     console.log(parsedVariables)
     const results = {};

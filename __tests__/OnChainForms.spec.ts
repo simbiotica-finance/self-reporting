@@ -4,25 +4,38 @@ import { deployContract } from 'ethereum-waffle' // this adds expect(onChainForm
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import getFromEvents from '../utils/getFromEvents'
+import parseResponse from '../utils/parseResponses'
+
+
+type Response = {
+  response: string
+  responseType: number
+}
 
 describe('OnChainForms', () => {
-  let onChainForms: Contract
-  let owner: SignerWithAddress
   let others: SignerWithAddress[]
-  let contract: Contract
+  let owner: SignerWithAddress
+
+  async function fixture() {
+    const Script = await ethers.getContractFactory("OnChainForms");
+    const contract = await Script.deploy();
+    const onChainForms = contract
+
+    return onChainForms ;
+  }
 
   beforeEach(async () => {
-    const OnChainForms = await ethers.getContractFactory('OnChainForms')
-    onChainForms = await OnChainForms.deploy()
-    contract = await onChainForms.deployed();
     [owner, ...others] = await ethers.getSigners()
   })
 
+
   it('Should deploy successfully', async () => {
+    const onChainForms = await fixture()
     expect(onChainForms.address).to.be.properAddress                         
   })
 
   it('Should create a form successfully', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -58,6 +71,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should add responders successfully', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form2'
     const description = 'Test description 2'
     const questions = [
@@ -90,10 +104,11 @@ describe('OnChainForms', () => {
   })
 
   it('Should submit a response successfully', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
-      { title: 'Question 1', description: 'Describe question 1', isRequired: true, responseType: 0}
+      { title: 'Question 1', description: 'Describe question 1', isRequired: true, responseType: 0},
     ]
 
     const { formId } = await getFromEvents(
@@ -127,10 +142,14 @@ describe('OnChainForms', () => {
       formId,
       questionIndex
     )
-    expect(responseHistory.responses[0]).to.equal(response)
+
+    const responseParsed = parseResponse(responseHistory.responses[0].response, responseHistory.responses[0].responseType)
+
+    expect(responseParsed).to.equal(response)
   })
 
   it('Should not allow unauthorized responders to submit responses', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -163,6 +182,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should not allow submitting responses with invalid question index', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -199,6 +219,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should not allow non-owners to create forms', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     await expect(
@@ -207,6 +228,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should not allow non-owners to add responders', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -237,6 +259,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should get the correct response history and timestamps', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -279,12 +302,13 @@ describe('OnChainForms', () => {
       0
     )
 
-    console.log(responseHistory1)
+    
 
-    expect(responseHistory1.responses).to.deep.equal([response1])
+    expect(responseHistory1.responses.map((res : Response) => parseResponse(res.response, res.responseType))).to.deep.equal([response1])
   })
 
   it('Should retrieve all responses from a particular responder', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -326,7 +350,7 @@ describe('OnChainForms', () => {
       questionIndex
     )
 
-    expect(responseHistory.responses).to.deep.equal([response1, response2])
+    expect(responseHistory.responses.map( (res: Response) => parseResponse(res.response, res.responseType))).to.deep.equal([response1, response2])
 
     const response3 = 3
 
@@ -339,7 +363,7 @@ describe('OnChainForms', () => {
       questionIndex
     )
 
-    expect(responseHistory.responses).to.deep.equal([
+    expect(responseHistory.responses.map( (res: Response) => parseResponse(res.response, res.responseType))).to.deep.equal([
       response1,
       response2,
       response3
@@ -347,6 +371,7 @@ describe('OnChainForms', () => {
   })
 
   it("Should retrieve all form IDs", async () => {
+    const onChainForms = await fixture()
     const title1 = "Form 1";
     const title2 = "Form 2";
     const title3 = "Form 3";
@@ -365,6 +390,7 @@ describe('OnChainForms', () => {
     expect(formIds[2].title).to.equal(title3);
   });
   it("Should retrieve details from a form", async () => {
+    const onChainForms = await fixture()
     const title = "Form 1";
     const description = "Describe test form";
 
@@ -399,6 +425,7 @@ describe('OnChainForms', () => {
   });
 
   it('Should not allow submitting responses with invalid response type', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const question = 
@@ -437,6 +464,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should retrieve responses from a particular responder', async () => {
+    const onChainForms = await fixture()
     const title = 'Test Form'
     const description = 'Describe test form'
     const questions = [
@@ -476,6 +504,7 @@ describe('OnChainForms', () => {
   })
 
   it('Should submit multiple responses successfully', async () => {
+    const onChainForms = await fixture()
   const title = 'Test Form'
   const description = 'Describe test form'
   const questions = [
@@ -512,7 +541,10 @@ describe('OnChainForms', () => {
       formId,
       questionIndices[i]
     )
-    expect(responseHistory.responses[0]).to.equal(responses[i])
+
+    console.log(responseHistory)
+
+    expect(parseResponse(responseHistory.responses[0].response, responseHistory.responses[0].responseType) ).to.equal(responses[i])
   }
 })
 

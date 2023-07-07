@@ -14,7 +14,7 @@ contract OnChainForms is Ownable {
     event FormCreated(uint formId, string title);
     event QuestionCreated(uint questionIndex, string title);
     event ResponderAdded(uint formId, address responder);
-    event ResponseSubmitted(uint formId, uint questionIndex, uint response, address responder);
+    event ResponseSubmitted(uint formId, uint questionIndex, bytes response, address responder);
 
     Counters.Counter private _formIds;
     mapping(uint => Form) public forms;
@@ -23,7 +23,8 @@ contract OnChainForms is Ownable {
 
     struct Response {
         uint questionIndex;
-        uint response;
+        bytes response;
+        ResponseType responseType;
         uint timestamp;
     }
 
@@ -33,7 +34,10 @@ contract OnChainForms is Ownable {
         Response responses;
     }
 
-    enum ResponseType { Number }
+    enum ResponseType { 
+        Number,
+        String
+    }
 
     struct Question {
         string title;
@@ -106,7 +110,7 @@ contract OnChainForms is Ownable {
         form.questionsCount.increment();
     }
 
-    function submitResponse(uint _formId, uint _questionIndex, uint _response) public {
+    function submitResponse(uint _formId, uint _questionIndex, bytes calldata _response) public {
         Form storage form = forms[_formId];
         Question storage question = form.questions[_questionIndex];
 
@@ -116,7 +120,7 @@ contract OnChainForms is Ownable {
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
         require(question.responseType == ResponseType.Number, "Invalid response type");
 
-        Response memory newResponse = Response(_questionIndex, _response, _timestamp);
+        Response memory newResponse = Response(_questionIndex, _response, question.responseType, _timestamp);
 
         question.responses[question.responsesCount.current()] = newResponse;
         question.responsesCount.increment();
@@ -145,7 +149,7 @@ contract OnChainForms is Ownable {
     function submitMultipleResponses(
         uint _formId, 
         uint[] calldata _questionIndexes, 
-        uint[] calldata _responses
+        bytes[] calldata _responses
     ) public {
         require(_questionIndexes.length == _responses.length, "Mismatched question indices and responses");
         require(_formId < _formIds.current(), "Invalid form id");
@@ -234,17 +238,17 @@ contract OnChainForms is Ownable {
     }
 
     function getResponseHistory(uint _formId, uint _questionIndex) public view
-        returns (uint[] memory responses, uint[] memory timestamps)
+        returns (Response[] memory responses, uint[] memory timestamps)
     {
         Form storage form = forms[_formId];
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
 
         Question storage question = form.questions[_questionIndex];
-        responses = new uint[](question.responsesCount.current());
+        responses = new Response[](question.responsesCount.current());
         timestamps = new uint[](question.responsesCount.current());
 
         for (uint i = 0; i < question.responsesCount.current(); i++) {
-            responses[i] = question.responses[i].response;
+            responses[i] = question.responses[i];
             timestamps[i] = question.responses[i].timestamp;
         }
 
