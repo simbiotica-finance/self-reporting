@@ -9,27 +9,6 @@
   },
   {
     "name": "add-question",
-    "title": "Business Model and Impact: Is the operation of the Institution directly related to the proposed impact?",
-    "description": "If your Institution's commercial results are directly related to the positive impact that your Institution proposes to make, answer Yes. If the impact is right, answer No.",
-    "responseType": 0,
-    "required": true
-  },
-  {
-    "name": "add-question",
-    "title": "Transparency: Your Institution's results are publicly disclosed.",
-    "description": "If we can publicly verify the results related to the impact, answer with Yes. If your Institution has not carried out, published or made public its results, answer No.",
-    "responseType": 0,
-    "required": true
-  },
-  {
-    "name": "add-question",
-    "title": "Is it possible to check the published result of your institution?",
-    "description": "If the answer to the previous question is yes, does the way in which the results are reported allow us to verify these results?",
-    "responseType": 0,
-    "required": true
-  },
-  {
-    "name": "add-question",
     "title": "Institution's carbon mitigation: Does the institution have a proprietary carbon mitigation program?",
     "description": "If yes, inform how many tons of carbon have already been mitigated by the company. If there is no program, answer 0.",
     "responseType": 0,
@@ -39,7 +18,7 @@
     "name": "add-question",
     "title": "Benefit Sharing: Is benefit sharing among stakeholders planned and structured?",
     "description": "If the Institution has identified all the parties interested in the Institutions' actions and has publicly made available a document that details the distribution of benefits, answer ''Yes''. If the interested parties and their benefits have not been identified and structured in public documentation, answer No.",
-    "responseType": 0,
+    "responseType": 1,
     "required": true
   },
   {

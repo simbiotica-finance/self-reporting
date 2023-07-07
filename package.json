@@ -27,6 +27,7 @@
     "ts-jest": "^29.1.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.0"
+    "@openzeppelin/contracts": "^4.9.0",
+    "bigint-buffer": "^1.1.5"
   }
 }

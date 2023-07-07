@@ -57,6 +57,7 @@ contract OnChainForms is Ownable {
         uint id;
         string title;
         string description;
+        ResponseType responseType;
     }
 
     struct Form {
@@ -118,7 +119,7 @@ contract OnChainForms is Ownable {
 
         require(form.allowedResponders[msg.sender], "Not an allowed responder");
         require(_questionIndex < form.questionsCount.current(), "Invalid question index");
-        require(question.responseType == ResponseType.Number, "Invalid response type");
+        require((question.responseType == ResponseType.Number || question.responseType == ResponseType.String), "Invalid response type");
 
         Response memory newResponse = Response(_questionIndex, _response, question.responseType, _timestamp);
 
@@ -210,7 +211,7 @@ contract OnChainForms is Ownable {
 
         for (uint i = 0; i < totalQuestions; i++) {
             Question storage question = form.questions[i];
-            questions[i] = DisplayQuestion(i,question.title, question.description);
+            questions[i] = DisplayQuestion(i,question.title, question.description, question.responseType);
         }
 
         return (

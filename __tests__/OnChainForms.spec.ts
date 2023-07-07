@@ -4,7 +4,8 @@ import { deployContract } from 'ethereum-waffle' // this adds expect(onChainForm
 import { expect } from 'chai'
 import { ethers } from 'hardhat'
 import getFromEvents from '../utils/getFromEvents'
-import parseResponse from '../utils/parseResponses'
+import parseResponse from '../utils/parseResponse'
+import responseToBytes from '../utils/responseToBytes'
 
 
 type Response = {
@@ -509,7 +510,7 @@ describe('OnChainForms', () => {
   const description = 'Describe test form'
   const questions = [
     { title: 'Question 1', description: 'Describe question 1', isRequired: true, responseType: 0},
-    { title: 'Question 2', description: 'Describe question 2', isRequired: true, responseType: 0}
+    { title: 'Question 2', description: 'Describe question 2', isRequired: true, responseType: 1}
   ]
 
   const { formId } = await getFromEvents(
@@ -530,11 +531,11 @@ describe('OnChainForms', () => {
   await onChainForms.addResponder(formId, others[0].address)
 
   const questionIndices = [0, 1]
-  const responses = [42, 43]
+  const responses = [42, 'bora bill']
 
   await onChainForms
     .connect(others[0])
-    .submitMultipleResponses(formId, questionIndices, responses)
+    .submitMultipleResponses(formId, questionIndices, responses.map(responseToBytes))
 
   for (let i = 0; i < questionIndices.length; i++) {
     const responseHistory = await onChainForms.getResponseHistory(
